@@ -58,6 +58,32 @@ describe('arena game engine', () => {
     expect(game.obstacles[0].x).toBeCloseTo(420 * 0.22);
   });
 
+  it('keeps actors inside the new arena and scales active projectiles on resize', () => {
+    const game = createGame(800, 420);
+    game.player.x = 20;
+    game.player.y = 20;
+    game.bullets.push({
+      x: 400,
+      y: 210,
+      velocity: { x: 100, y: -50 },
+      radius: 5,
+      life: 1,
+      owner: 'player',
+      damage: 25,
+    });
+
+    resizeGame(game, 200, 100);
+
+    expect(game.player.x).toBeGreaterThanOrEqual(game.player.radius);
+    expect(game.player.y).toBeGreaterThanOrEqual(game.player.radius);
+    expect(game.player.x).toBeLessThanOrEqual(200 - game.player.radius);
+    expect(game.player.y).toBeLessThanOrEqual(100 - game.player.radius);
+    expect(game.bullets[0].x).toBe(100);
+    expect(game.bullets[0].y).toBe(50);
+    expect(game.bullets[0].velocity.x).toBe(25);
+    expect(game.bullets[0].velocity.y).toBeCloseTo(-50 / 4.2);
+  });
+
   it('ends the match when the player health reaches zero', () => {
     const game = createGame(800, 420);
     game.status = 'playing';
