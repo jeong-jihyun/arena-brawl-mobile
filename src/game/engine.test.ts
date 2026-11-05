@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createGame, resizeGame, triggerSpecial, updateGame } from './engine';
+import { circleIntersectsRect } from '../domain/physics/collision';
 
 describe('arena game engine', () => {
   it('creates a ready arena with one player and five enemies', () => {
@@ -8,6 +9,39 @@ describe('arena game engine', () => {
     expect(game.player.hp).toBe(100);
     expect(game.enemies).toHaveLength(5);
     expect(game.obstacles).toHaveLength(4);
+  });
+
+  it('spawns enemies outside obstacles and away from the player', () => {
+    const game = createGame(800, 420);
+
+    for (const enemy of game.enemies) {
+      expect(
+        game.obstacles.some((obstacle) =>
+          circleIntersectsRect({ x: enemy.x, y: enemy.y }, enemy.radius, obstacle)
+        ),
+      ).toBe(false);
+      expect(Math.hypot(enemy.x - game.player.x, enemy.y - game.player.y))
+        .toBeGreaterThan(enemy.radius + game.player.radius);
+    }
+
+    for (let i = 0; i < game.enemies.length; i += 1) {
+      for (let j = i + 1; j < game.enemies.length; j += 1) {
+        const a = game.enemies[i];
+        const b = game.enemies[j];
+        expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThan(a.radius + b.radius);
+      }
+    }
+  });
+
+  it('keeps obstacles inside a compact landscape arena', () => {
+    const game = createGame(420, 180);
+    for (const obstacle of game.obstacles) {
+      expect(obstacle.x).toBeGreaterThanOrEqual(0);
+      expect(obstacle.y).toBeGreaterThanOrEqual(0);
+      expect(obstacle.x + obstacle.width).toBeLessThanOrEqual(game.width);
+      expect(obstacle.y + obstacle.height).toBeLessThanOrEqual(game.height);
+    }
+    expect(game.enemies).toHaveLength(5);
   });
 
   it('does not advance gameplay before the match starts', () => {
