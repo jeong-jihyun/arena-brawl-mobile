@@ -39,6 +39,7 @@ APK 출력: `android/app/build/outputs/apk/debug/app-debug.apk`
 - `npm run typecheck`: TypeScript strict 타입 검사
 - `npm test`: Vitest 게임 엔진 단위 테스트
 - GitHub Actions가 push 및 PR마다 두 검사를 자동 실행합니다.
+- 저장소에 lockfile이 아직 없으므로 CI는 `npm install`로 의존성을 설치합니다.
 
 ## 구현 기능
 - 가로 화면 아레나 및 Skia 렌더링
