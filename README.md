@@ -29,17 +29,19 @@ npx expo start
 ```
 Android 기기/에뮬레이터:
 ```bash
-npm run android
 npx expo prebuild --platform android
-cd android && ./gradlew assembleDebug
+npm run android
 ```
 APK 출력: `android/app/build/outputs/apk/debug/app-debug.apk`
 
 ## 품질 검사
 - `npm run typecheck`: TypeScript strict 타입 검사
 - `npm test`: Vitest 게임 엔진 단위 테스트
-- GitHub Actions가 push 및 PR마다 두 검사를 자동 실행합니다.
-- 저장소에 lockfile이 아직 없으므로 CI는 `npm install`로 의존성을 설치합니다.
+- `Android app build` GitHub Actions: Expo 설정 검증, Android JS 번들 생성, 네이티브 Android 프로젝트 생성, Debug APK 빌드
+- `React Native quality checks` GitHub Actions: 타입 검사 및 게임 엔진 단위 테스트
+- lockfile이 아직 없으므로 CI는 `npm install`로 의존성을 설치합니다.
+
+**주의:** 타입 검사와 엔진 단위 테스트가 통과해도 실제 Android 화면이 실행된다는 뜻은 아닙니다. Debug APK 빌드가 통과해야 네이티브 컴파일과 JS 번들 단계까지 검증됩니다. APK를 실제 기기에 설치해 터치·화면 회전·게임 플레이를 확인하는 수동 검증은 별도입니다.
 
 ## 구현 기능
 - 가로 화면 아레나 및 Skia 렌더링
