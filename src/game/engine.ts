@@ -1,4 +1,5 @@
-import type { Actor, GameState, Vec2 } from './types';
+import type { Actor, GameState, Vec2 } from '../domain/model/types';
+import { circleIntersectsRect } from '../domain/physics/collision';
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 const distance = (a: Vec2, b: Vec2) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -32,9 +33,8 @@ export function createGame(width: number, height: number): GameState {
 }
 
 function collidesWithObstacle(x: number, y: number, radius: number, state: GameState) {
-  return state.obstacles.some((o) =>
-    x + radius > o.x && x - radius < o.x + o.width &&
-    y + radius > o.y && y - radius < o.y + o.height
+  return state.obstacles.some((obstacle) =>
+    circleIntersectsRect({ x, y }, radius, obstacle)
   );
 }
 
@@ -128,16 +128,33 @@ export function updateGame(state: GameState, deltaSeconds: number) {
 }
 
 export function resizeGame(state: GameState, width: number, height: number) {
-  const sx = width / state.width;
-  const sy = height / state.height;
-  state.width = Math.max(1, width); state.height = Math.max(1, height);
-  state.player.x *= sx; state.player.y *= sy;
-  state.enemies.forEach((enemy) => { enemy.x *= sx; enemy.y *= sy; });
-  width = state.width; height = state.height;
+  const nextWidth = Math.max(1, width);
+  const nextHeight = Math.max(1, height);
+  const sx = nextWidth / Math.max(1, state.width);
+  const sy = nextHeight / Math.max(1, state.height);
+
+  state.width = nextWidth;
+  state.height = nextHeight;
   state.obstacles = [
-    { x: width * 0.22, y: height * 0.22, width: 78, height: 54 },
-    { x: width * 0.70, y: height * 0.20, width: 90, height: 58 },
-    { x: width * 0.23, y: height * 0.68, width: 90, height: 54 },
-    { x: width * 0.69, y: height * 0.68, width: 78, height: 58 },
+    { x: nextWidth * 0.22, y: nextHeight * 0.22, width: 78, height: 54 },
+    { x: nextWidth * 0.70, y: nextHeight * 0.20, width: 90, height: 58 },
+    { x: nextWidth * 0.23, y: nextHeight * 0.68, width: 90, height: 54 },
+    { x: nextWidth * 0.69, y: nextHeight * 0.68, width: 78, height: 58 },
   ];
+
+  const scaleActor = (actor: Actor) => {
+    actor.x = clamp(actor.x * sx, actor.radius, nextWidth - actor.radius);
+    actor.y = clamp(actor.y * sy, actor.radius, nextHeight - actor.radius);
+  };
+  scaleActor(state.player);
+  state.enemies.forEach(scaleActor);
+
+  state.bullets.forEach((bullet) => {
+    bullet.x *= sx;
+    bullet.y *= sy;
+    bullet.velocity.x *= sx;
+    bullet.velocity.y *= sy;
+    bullet.x = clamp(bullet.x, 0, nextWidth);
+    bullet.y = clamp(bullet.y, 0, nextHeight);
+  });
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createGame, resizeGame, triggerSpecial, updateGame } from './engine';
 import type { GameState, Vec2 } from './types';
+import { FixedStepClock } from '../application/game/FixedStepClock';
 
 function copyState(state: GameState): GameState {
   return {
@@ -30,8 +31,13 @@ export function useGameLoop(width: number, height: number) {
     let frame = 0;
     let previous = 0;
     let raf = 0;
+    const clock = new FixedStepClock();
     const tick = (time: number) => {
-      if (previous) updateGame(engine.current, (time - previous) / 1000);
+      if (previous) {
+        clock.advance((time - previous) / 1000, (stepSeconds) => {
+          updateGame(engine.current, stepSeconds);
+        });
+      }
       previous = time;
       if (frame % 2 === 0) setSnapshot(copyState(engine.current));
       frame += 1;
