@@ -1,4 +1,5 @@
 import type { Actor, GameState, Vec2 } from './types';
+import { circleIntersectsRect } from '../domain/physics/collision';
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 const distance = (a: Vec2, b: Vec2) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -32,9 +33,8 @@ export function createGame(width: number, height: number): GameState {
 }
 
 function collidesWithObstacle(x: number, y: number, radius: number, state: GameState) {
-  return state.obstacles.some((o) =>
-    x + radius > o.x && x - radius < o.x + o.width &&
-    y + radius > o.y && y - radius < o.y + o.height
+  return state.obstacles.some((obstacle) =>
+    circleIntersectsRect({ x, y }, radius, obstacle)
   );
 }
 
