@@ -8,25 +8,77 @@ function makeActor(x: number, y: number, hp: number): Actor {
   return { x, y, radius: 19, hp, maxHp: hp, cooldown: 0 };
 }
 
-export function createGame(width: number, height: number): GameState {
-  const obstacles = [
-    { x: width * 0.22, y: height * 0.22, width: 78, height: 54 },
-    { x: width * 0.70, y: height * 0.20, width: 90, height: 58 },
-    { x: width * 0.23, y: height * 0.68, width: 90, height: 54 },
-    { x: width * 0.69, y: height * 0.68, width: 78, height: 58 },
+function createObstacles(width: number, height: number) {
+  const scaleWidth = Math.min(1, Math.max(0.12, width / 560));
+  const scaleHeight = Math.min(1, Math.max(0.12, height / 210));
+  return [
+    { x: width * 0.22, y: height * 0.22, width: 78 * scaleWidth, height: 54 * scaleHeight },
+    { x: width * 0.70, y: height * 0.20, width: 90 * scaleWidth, height: 58 * scaleHeight },
+    { x: width * 0.23, y: height * 0.68, width: 90 * scaleWidth, height: 54 * scaleHeight },
+    { x: width * 0.69, y: height * 0.68, width: 78 * scaleWidth, height: 58 * scaleHeight },
   ];
-  const enemies = Array.from({ length: 5 }, (_, i) => {
+}
+
+function findFreeSpawn(
+  preferred: Vec2,
+  width: number,
+  height: number,
+  obstacles: GameState['obstacles'],
+  occupied: Array<{ position: Vec2; radius: number }>,
+  radius: number,
+): Vec2 {
+  const minX = Math.min(radius, width / 2);
+  const maxX = Math.max(minX, width - radius);
+  const minY = Math.min(radius, height / 2);
+  const maxY = Math.max(minY, height - radius);
+  const step = radius * 2 + 8;
+  const candidates: Vec2[] = [];
+
+  for (let y = minY; y <= maxY; y += step) {
+    for (let x = minX; x <= maxX; x += step) {
+      const point = { x, y };
+      const blocked = obstacles.some((obstacle) => circleIntersectsRect(point, radius, obstacle));
+      const crowded = occupied.some((other) => distance(point, other.position) < radius + other.radius + 8);
+      if (!blocked && !crowded) candidates.push(point);
+    }
+  }
+
+  candidates.sort((a, b) => distance(a, preferred) - distance(b, preferred));
+  if (candidates.length) return candidates[0];
+
+  return {
+    x: clamp(preferred.x, minX, maxX),
+    y: clamp(preferred.y, minY, maxY),
+  };
+}
+
+export function createGame(width: number, height: number): GameState {
+  const safeWidth = Math.max(1, width);
+  const safeHeight = Math.max(1, height);
+  const obstacles = createObstacles(safeWidth, safeHeight);
+  const player = makeActor(safeWidth / 2, safeHeight / 2, 100);
+  const occupied = [{ position: player, radius: player.radius }];
+  const enemies: GameState['enemies'] = [];
+
+  for (let i = 0; i < 5; i += 1) {
     const angle = (Math.PI * 2 * i) / 5;
-    return {
-      ...makeActor(width / 2 + Math.cos(angle) * width * 0.31, height / 2 + Math.sin(angle) * height * 0.31, 70),
+    const preferred = {
+      x: safeWidth / 2 + Math.cos(angle) * safeWidth * 0.31,
+      y: safeHeight / 2 + Math.sin(angle) * safeHeight * 0.31,
+    };
+    const position = findFreeSpawn(preferred, safeWidth, safeHeight, obstacles, occupied, 19);
+    const enemy = {
+      ...makeActor(position.x, position.y, 70),
       speed: 48 + (i % 3) * 8,
       phase: i,
     };
-  });
+    enemies.push(enemy);
+    occupied.push({ position: enemy, radius: enemy.radius });
+  }
+
   return {
-    width, height, obstacles,
-    player: { ...makeActor(width / 2, height / 2, 100) },
-    enemies, bullets: [], score: 0, status: 'ready',
+    width: safeWidth, height: safeHeight, obstacles,
+    player, enemies, bullets: [], score: 0, status: 'ready',
     joystick: { x: 0, y: 0 }, attacking: false,
     specialReady: true, specialCooldown: 0,
   };
@@ -135,12 +187,7 @@ export function resizeGame(state: GameState, width: number, height: number) {
 
   state.width = nextWidth;
   state.height = nextHeight;
-  state.obstacles = [
-    { x: nextWidth * 0.22, y: nextHeight * 0.22, width: 78, height: 54 },
-    { x: nextWidth * 0.70, y: nextHeight * 0.20, width: 90, height: 58 },
-    { x: nextWidth * 0.23, y: nextHeight * 0.68, width: 90, height: 54 },
-    { x: nextWidth * 0.69, y: nextHeight * 0.68, width: 78, height: 58 },
-  ];
+  state.obstacles = createObstacles(nextWidth, nextHeight);
 
   const scaleActor = (actor: Actor) => {
     actor.x = clamp(actor.x * sx, actor.radius, nextWidth - actor.radius);
