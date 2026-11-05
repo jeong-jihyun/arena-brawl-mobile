@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Arena Brawl",
+    "slug": "arena-brawl-mobile",
+    "version": "1.0.0",
+    "orientation": "landscape",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.jeongjihyun.arenabrawl",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#101827"
+      }
+    }
+  }
+}
