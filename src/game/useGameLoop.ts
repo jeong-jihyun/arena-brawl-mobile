@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createGame, triggerSpecial, updateGame } from './engine';
+import { createGame, resizeGame, triggerSpecial, updateGame } from './engine';
 import type { GameState, Vec2 } from './types';
 
 function copyState(state: GameState): GameState {
@@ -19,22 +19,26 @@ export function useGameLoop(width: number, height: number) {
 
   useEffect(() => {
     const state = engine.current;
-    state.width = Math.max(width, 1);
-    state.height = Math.max(height, 1);
+    const nextWidth = Math.max(width, 1);
+    const nextHeight = Math.max(height, 1);
+    if (state.width !== nextWidth || state.height !== nextHeight) {
+      resizeGame(state, nextWidth, nextHeight);
+    }
   }, [width, height]);
 
   useEffect(() => {
     let frame = 0;
     let previous = 0;
+    let raf = 0;
     const tick = (time: number) => {
       if (previous) updateGame(engine.current, (time - previous) / 1000);
       previous = time;
       if (frame % 2 === 0) setSnapshot(copyState(engine.current));
       frame += 1;
-      requestAnimationFrame(tick);
+      raf = requestAnimationFrame(tick);
     };
-    const id = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(id);
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   const setJoystick = useCallback((value: Vec2) => {

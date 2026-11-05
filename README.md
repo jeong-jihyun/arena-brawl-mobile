@@ -24,6 +24,7 @@ Node.js LTS와 Android Studio / Android SDK가 필요합니다.
 npm install
 npx expo install --check
 npm run typecheck
+npm test
 npx expo start
 ```
 Android 기기/에뮬레이터:
@@ -33,6 +34,11 @@ npx expo prebuild --platform android
 cd android && ./gradlew assembleDebug
 ```
 APK 출력: `android/app/build/outputs/apk/debug/app-debug.apk`
+
+## 품질 검사
+- `npm run typecheck`: TypeScript strict 타입 검사
+- `npm test`: Vitest 게임 엔진 단위 테스트
+- GitHub Actions가 push 및 PR마다 두 검사를 자동 실행합니다.
 
 ## 구현 기능
 - 가로 화면 아레나 및 Skia 렌더링
