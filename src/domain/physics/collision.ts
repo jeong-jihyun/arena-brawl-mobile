@@ -1,10 +1,12 @@
-import type { Obstacle, Vec2 } from '../../game/types';
+
+type Point = { x: number; y: number };
+type Rectangle = { x: number; y: number; width: number; height: number };
 
 /** Exact circle-vs-axis-aligned-rectangle overlap using the closest point. */
 export function circleIntersectsRect(
-  center: Vec2,
+  center: Point,
   radius: number,
-  rect: Obstacle,
+  rect: Rectangle,
 ): boolean {
   const closestX = Math.max(rect.x, Math.min(center.x, rect.x + rect.width));
   const closestY = Math.max(rect.y, Math.min(center.y, rect.y + rect.height));
