@@ -1,4 +1,4 @@
-import type { Actor, GameState, Vec2 } from './types';
+import type { Actor, GameState, Vec2 } from '../domain/model/types';
 import { circleIntersectsRect } from '../domain/physics/collision';
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
