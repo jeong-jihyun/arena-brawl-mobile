@@ -1,31 +1,46 @@
-# ARENA BRAWL
+# Arena Brawl — React Native
 
-브롤스타즈의 탑다운 아레나 전투 방식에서 영감을 받은 오리지널 모바일 브라우저 게임 프로토타입입니다.
+기존 브라우저 HTML 데모를 대체하는 **React Native + TypeScript + Expo + Shopify Skia** Android 게임 프로젝트입니다. 오리지널 아레나 슈터 프로토타입이며 기존 게임의 캐릭터/아트/상표를 복제하지 않습니다.
+
+## 기술 스택
+- Expo SDK 54 / React Native 0.81 / React 19
+- TypeScript strict mode
+- Shopify React Native Skia Canvas 렌더링
+- PanResponder 가상 조이스틱
+- Android applicationId: `com.jeongjihyun.arenabrawl`
+
+## 구조
+```
+App.tsx, index.ts, app.json, package.json, tsconfig.json
+src/components/{ActionButton,GameCanvas,VirtualJoystick}.tsx
+src/game/{engine,types,useGameLoop}.ts
+src/screens/GameScreen.tsx
+src/theme.ts
+```
 
 ## 실행
-- `index.html`을 브라우저에서 열면 바로 플레이할 수 있습니다.
-- 모바일: 왼쪽 가상 조이스틱으로 이동, 오른쪽 공격 버튼으로 발사합니다.
-- 특수기는 주변 적에게 광역 피해를 줍니다.
-- PC: WASD 또는 방향키로 이동, 스페이스바로 공격합니다.
+Node.js LTS와 Android Studio / Android SDK가 필요합니다.
+```bash
+npm install
+npx expo install --check
+npm run typecheck
+npx expo start
+```
+Android 기기/에뮬레이터:
+```bash
+npm run android
+npx expo prebuild --platform android
+cd android && ./gradlew assembleDebug
+```
+APK 출력: `android/app/build/outputs/apk/debug/app-debug.apk`
 
 ## 구현 기능
-- HTML5 Canvas 기반 반응형 렌더링
-- 모바일 터치 조이스틱 및 공격/특수기 버튼
-- 적 로봇 AI 추적 및 원거리 공격
-- 장애물 충돌, 체력, 점수, 승리/패배, 재시작
-- PWA 기본 manifest
+- 가로 화면 아레나 및 Skia 렌더링
+- 가상 조이스틱 이동, 공격 버튼 연속 발사
+- 적 추적 AI 및 원거리 공격
+- 장애물 충돌, 투사체, HP/점수
+- 범위형 특수 공격과 쿨다운
+- 승리/패배 및 재시작
 
-## GitHub Pages 배포
-1. 저장소 Settings → Pages로 이동합니다.
-2. Build and deployment에서 Deploy from a branch를 선택합니다.
-3. Branch는 `main`, 폴더는 `/ (root)`를 선택하고 저장합니다.
-4. 배포 완료 후 제공되는 Pages 주소를 모바일 브라우저에서 엽니다.
-
-## 다음 개발 단계
-- 캐릭터 선택 및 캐릭터별 무기/궁극기
-- 여러 게임 모드와 맵
-- 사운드와 스프라이트 애니메이션
-- 계정/랭크/저장 기능
-- 서버 기반 실시간 멀티플레이(별도 백엔드 필요)
-
-현재 버전은 로컬 싱글 플레이 MVP이며 온라인 멀티플레이와 APK 빌드는 포함하지 않습니다.
+## 아직 구현하지 않은 범위
+온라인 멀티플레이, 계정/매치메이킹, 캐릭터 선택/성장, 정식 아트/사운드, 스토어 배포 서명은 미포함입니다. 서버와 별도 에셋/릴리스 파이프라인이 필요합니다.
