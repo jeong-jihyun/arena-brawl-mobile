@@ -17,7 +17,7 @@ export function circleIntersectsRect(
 
 /** True when a point is inside an arena after accounting for its radius. */
 export function circleIsInsideBounds(
-  center: Vec2,
+  center: Point,
   radius: number,
   width: number,
   height: number,
