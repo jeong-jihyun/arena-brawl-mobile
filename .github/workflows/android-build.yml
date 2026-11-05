@@ -1,0 +1,55 @@
+name: Android app build
+
+on:
+  push:
+    branches: [main, verify-android-runtime]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Validate Expo configuration
+        run: npx expo config --type public
+
+      - name: Bundle Android JavaScript
+        run: npx expo export --platform android
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --no-install --non-interactive
+
+      - name: Build debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: arena-brawl-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
