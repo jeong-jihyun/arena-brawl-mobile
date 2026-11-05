@@ -130,9 +130,10 @@ export function updateGame(state: GameState, deltaSeconds: number) {
 export function resizeGame(state: GameState, width: number, height: number) {
   const sx = width / state.width;
   const sy = height / state.height;
-  state.width = width; state.height = height;
+  state.width = Math.max(1, width); state.height = Math.max(1, height);
   state.player.x *= sx; state.player.y *= sy;
   state.enemies.forEach((enemy) => { enemy.x *= sx; enemy.y *= sy; });
+  width = state.width; height = state.height;
   state.obstacles = [
     { x: width * 0.22, y: height * 0.22, width: 78, height: 54 },
     { x: width * 0.70, y: height * 0.20, width: 90, height: 58 },
