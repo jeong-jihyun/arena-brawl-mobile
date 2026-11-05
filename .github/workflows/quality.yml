@@ -2,7 +2,7 @@ name: React Native quality checks
 
 on:
   push:
-    branches: [main, game-engine-tests-ci]
+    branches: [main, game-engine-tests-ci, architecture-rebuild]
   pull_request:
     branches: [main]
 
