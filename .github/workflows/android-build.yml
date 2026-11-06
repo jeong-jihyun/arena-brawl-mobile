@@ -68,10 +68,7 @@ jobs:
             adb exec-out screencap -p > "$GITHUB_WORKSPACE/arena-basic-screen.png"
             test -s "$GITHUB_WORKSPACE/arena-basic-screen.png"
             adb logcat -d -v threadtime > "$GITHUB_WORKSPACE/arena-logcat.txt"
-            if grep -E "FATAL EXCEPTION|AndroidRuntime.*(FATAL|Exception)|ReactNativeJS.*(Error|error)" "$GITHUB_WORKSPACE/arena-logcat.txt"; then
-              echo "Runtime exception detected."
-              exit 1
-            fi
+            if grep -E "FATAL EXCEPTION|AndroidRuntime.*(FATAL|Exception)|ReactNativeJS.*(Error|error)" "$GITHUB_WORKSPACE/arena-logcat.txt"; then echo "Runtime exception detected."; exit 1; fi
             echo "Basic React Native screen captured; app process is alive."
 
       - name: Upload APK and emulator screenshot
