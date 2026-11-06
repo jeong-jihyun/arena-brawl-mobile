@@ -77,6 +77,15 @@ jobs:
               exit 1
             fi
             echo "Arena Brawl process is alive and its activity is present after launch."
+            adb shell uiautomator dump /sdcard/arena-window.xml >/dev/null
+            adb shell cat /sdcard/arena-window.xml > arena-window.xml
+            if ! grep -q "READY TO BRAWL?" arena-window.xml; then
+              echo "Expected game start screen text was not found in the Android UI hierarchy."
+              cat arena-window.xml
+              adb logcat -d -v threadtime
+              exit 1
+            fi
+            echo "Game start screen text is present in the Android UI hierarchy."
             adb logcat -d -v threadtime | grep -E "FATAL EXCEPTION|AndroidRuntime|ReactNativeJS" || true
 
       - name: Upload standalone release APK
