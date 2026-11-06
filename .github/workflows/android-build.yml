@@ -55,17 +55,36 @@ jobs:
       - name: Android emulator launch and screenshot test
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 34
           arch: x86_64
-          profile: pixel_6
+          profile: pixel_2
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -memory 4096
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -memory 4096 -cores 2
           script: |
             set +e
             APK="$GITHUB_WORKSPACE/android/app/build/outputs/apk/release/app-release.apk"
+            adb start-server
+            adb reconnect offline
+            DEVICE_READY=0
+            for attempt in $(seq 1 90); do
+              STATE="$(adb get-state 2>/dev/null | tr -d '\r')"
+              BOOT="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
+              if [ "$STATE" = "device" ] && [ "$BOOT" = "1" ]; then DEVICE_READY=1; break; fi
+              sleep 2
+              if [ $((attempt % 10)) -eq 0 ]; then adb reconnect offline; fi
+            done
+            if [ "$DEVICE_READY" -ne 1 ]; then
+              adb devices -l > "$GITHUB_WORKSPACE/arena-adb-devices.txt"
+              echo "Emulator did not become ready; refusing to skip runtime test."
+              exit 1
+            fi
+            adb shell settings put global window_animation_scale 0
+            adb shell settings put global transition_animation_scale 0
+            adb shell settings put global animator_duration_scale 0
             adb install -r "$APK"
             INSTALL_STATUS=$?
             adb logcat -c
+            adb shell am force-stop com.jeongjihyun.arenabrawl
             adb shell am start -W -n com.jeongjihyun.arenabrawl/.MainActivity
             START_STATUS=$?
             APP_PID=""
@@ -77,7 +96,8 @@ jobs:
             adb exec-out screencap -p > "$GITHUB_WORKSPACE/arena-basic-screen.png"
             SCREEN_STATUS=$?
             adb logcat -d -v threadtime > "$GITHUB_WORKSPACE/arena-logcat.txt"
-            printf 'install_status=%s\nstart_status=%s\napp_pid=%s\nscreenshot_status=%s\n' "$INSTALL_STATUS" "$START_STATUS" "$APP_PID" "$SCREEN_STATUS" > "$GITHUB_WORKSPACE/arena-emulator-result.txt"
+            adb devices -l > "$GITHUB_WORKSPACE/arena-adb-devices.txt"
+            printf 'device_ready=%s\ninstall_status=%s\nstart_status=%s\napp_pid=%s\nscreenshot_status=%s\n' "$DEVICE_READY" "$INSTALL_STATUS" "$START_STATUS" "$APP_PID" "$SCREEN_STATUS" > "$GITHUB_WORKSPACE/arena-emulator-result.txt"
             test "$INSTALL_STATUS" -eq 0 && test "$START_STATUS" -eq 0 && test -n "$APP_PID" && test "$SCREEN_STATUS" -eq 0 && test -s "$GITHUB_WORKSPACE/arena-basic-screen.png"
 
       - name: Upload APK and emulator diagnostics
@@ -90,5 +110,6 @@ jobs:
             arena-basic-screen.png
             arena-logcat.txt
             arena-emulator-result.txt
+            arena-adb-devices.txt
           if-no-files-found: warn
           retention-days: 7
