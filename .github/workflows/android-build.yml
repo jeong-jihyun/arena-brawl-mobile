@@ -54,6 +54,31 @@ jobs:
           cd android
           ./gradlew assembleRelease --no-daemon
 
+      - name: Android emulator launch smoke test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install -r android/app/build/outputs/apk/release/app-release.apk
+            adb logcat -c
+            adb shell monkey -p com.jeongjihyun.arenabrawl 1
+            sleep 25
+            if ! adb shell pidof com.jeongjihyun.arenabrawl >/dev/null; then
+              echo "Arena Brawl process exited after launch."
+              adb logcat -d -v threadtime
+              exit 1
+            fi
+            if ! adb shell dumpsys activity activities | grep -q "com.jeongjihyun.arenabrawl"; then
+              echo "Arena Brawl is not present in the active Android activities."
+              adb logcat -d -v threadtime
+              exit 1
+            fi
+            echo "Arena Brawl process is alive and its activity is present after launch."
+            adb logcat -d -v threadtime | grep -E "FATAL EXCEPTION|AndroidRuntime|ReactNativeJS" || true
+
       - name: Upload standalone release APK
         uses: actions/upload-artifact@v4
         with:
