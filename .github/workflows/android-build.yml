@@ -47,14 +47,12 @@ jobs:
       - name: Generate native Android project
         run: npx expo prebuild --platform android --no-install --non-interactive
 
-      # Debug APKs expect a Metro server on the device/network.
-      # A release APK embeds index.android.bundle and runs standalone.
       - name: Build standalone release APK
         run: |
           cd android
           ./gradlew assembleRelease --no-daemon
 
-      - name: Android emulator launch smoke test
+      - name: Android emulator launch and screenshot test
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -65,18 +63,24 @@ jobs:
             adb install -r "$GITHUB_WORKSPACE/android/app/build/outputs/apk/release/app-release.apk"
             adb logcat -c
             adb shell monkey -p com.jeongjihyun.arenabrawl 1
-            sleep 20
+            sleep 15
             adb shell pidof com.jeongjihyun.arenabrawl
-            adb shell uiautomator dump /sdcard/arena-startup.xml
-            adb shell cat /sdcard/arena-startup.xml > "$GITHUB_WORKSPACE/arena-startup.xml"
-            grep -q "앱 기본 실행 성공" "$GITHUB_WORKSPACE/arena-startup.xml"
-            echo "Arena Brawl native startup screen is visible and app process remains alive."
-            adb logcat -d -v threadtime | grep -E "FATAL EXCEPTION|AndroidRuntime|ReactNativeJS" || true
+            adb exec-out screencap -p > "$GITHUB_WORKSPACE/arena-basic-screen.png"
+            test -s "$GITHUB_WORKSPACE/arena-basic-screen.png"
+            adb logcat -d -v threadtime > "$GITHUB_WORKSPACE/arena-logcat.txt"
+            if grep -E "FATAL EXCEPTION|AndroidRuntime.*(FATAL|Exception)|ReactNativeJS.*(Error|error)" "$GITHUB_WORKSPACE/arena-logcat.txt"; then
+              echo "Runtime exception detected."
+              exit 1
+            fi
+            echo "Basic React Native screen captured; app process is alive."
 
-      - name: Upload standalone release APK
+      - name: Upload APK and emulator screenshot
         uses: actions/upload-artifact@v4
         with:
-          name: arena-brawl-standalone-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: arena-brawl-basic-android
+          path: |
+            android/app/build/outputs/apk/release/app-release.apk
+            arena-basic-screen.png
+            arena-logcat.txt
           if-no-files-found: error
           retention-days: 7
