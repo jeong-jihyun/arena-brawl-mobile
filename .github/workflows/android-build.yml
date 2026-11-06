@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  android-debug:
+  android-release:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -41,21 +41,23 @@ jobs:
       - name: Validate Expo configuration
         run: npx expo config --type public
 
-      - name: Bundle Android JavaScript
+      - name: Validate Android JavaScript bundle
         run: npx expo export --platform android
 
       - name: Generate native Android project
         run: npx expo prebuild --platform android --no-install --non-interactive
 
-      - name: Build debug APK
+      # Debug APKs expect a Metro server on the device/network.
+      # A release APK embeds index.android.bundle and runs standalone.
+      - name: Build standalone release APK
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
-      - name: Upload debug APK
+      - name: Upload standalone release APK
         uses: actions/upload-artifact@v4
         with:
-          name: arena-brawl-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: arena-brawl-standalone-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 7
