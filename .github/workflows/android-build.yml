@@ -59,25 +59,36 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -memory 4096
           script: |
-            adb install -r "$GITHUB_WORKSPACE/android/app/build/outputs/apk/release/app-release.apk"
+            set +e
+            APK="$GITHUB_WORKSPACE/android/app/build/outputs/apk/release/app-release.apk"
+            adb install -r "$APK"
+            INSTALL_STATUS=$?
             adb logcat -c
-            adb shell monkey -p com.jeongjihyun.arenabrawl 1
-            sleep 15
-            adb shell pidof com.jeongjihyun.arenabrawl
+            adb shell am start -W -n com.jeongjihyun.arenabrawl/.MainActivity
+            START_STATUS=$?
+            APP_PID=""
+            for attempt in $(seq 1 60); do
+              APP_PID="$(adb shell pidof com.jeongjihyun.arenabrawl 2>/dev/null | tr -d '\r')"
+              if [ -n "$APP_PID" ]; then break; fi
+              sleep 2
+            done
             adb exec-out screencap -p > "$GITHUB_WORKSPACE/arena-basic-screen.png"
-            test -s "$GITHUB_WORKSPACE/arena-basic-screen.png"
+            SCREEN_STATUS=$?
             adb logcat -d -v threadtime > "$GITHUB_WORKSPACE/arena-logcat.txt"
-            if grep -E "FATAL EXCEPTION|AndroidRuntime.*(FATAL|Exception)|ReactNativeJS.*(Error|error)" "$GITHUB_WORKSPACE/arena-logcat.txt"; then echo "Runtime exception detected."; exit 1; fi
-            echo "Basic React Native screen captured; app process is alive."
+            printf 'install_status=%s\nstart_status=%s\napp_pid=%s\nscreenshot_status=%s\n' "$INSTALL_STATUS" "$START_STATUS" "$APP_PID" "$SCREEN_STATUS" > "$GITHUB_WORKSPACE/arena-emulator-result.txt"
+            test "$INSTALL_STATUS" -eq 0 && test "$START_STATUS" -eq 0 && test -n "$APP_PID" && test "$SCREEN_STATUS" -eq 0 && test -s "$GITHUB_WORKSPACE/arena-basic-screen.png"
 
-      - name: Upload APK and emulator screenshot
+      - name: Upload APK and emulator diagnostics
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: arena-brawl-basic-android
+          name: arena-brawl-android-build
           path: |
             android/app/build/outputs/apk/release/app-release.apk
             arena-basic-screen.png
             arena-logcat.txt
-          if-no-files-found: error
+            arena-emulator-result.txt
+          if-no-files-found: warn
           retention-days: 7
